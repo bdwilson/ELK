@@ -2,7 +2,7 @@
 #
 # chkconfig: 2345 70 40
 # description: logstash startup script
-#
+
 LOGBASE="/etc/logstash"
 LOGHOME="${LOGBASE}/logstash-1.4.2"
 TAG="unix"
