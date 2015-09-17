@@ -1,1 +1,15 @@
+# Below are a few crontab entries I've used to help  maintain the logs.
 
+# Logmerge scripts to consolidate and zip all logs on the syslog-ng servers
+0 1 * * *      /local/bin/logmerge -f /mnt/logs/UNIX/`date -d yesterday +\%Y-\%m-\%d`-sys*.log | gzip -9 -c > /mnt/logs/UNIX/`date -d yesterday +\%Y-\%m-\%d`.log.gz && rm -f /mnt/logs/UNIX/`date -d yesterday +\%Y-\%m-\%d`-sys*.log
+0 2 * * *      /local/bin/logmerge -f /mnt/logs/Networking/`date -d yesterday +\%Y-\%m-\%d`-sys*.log | gzip -9 -c > /mnt/logs/Networking/`date -d yesterday +\%Y-\%m-\%d`.log.gz && rm -f /mnt/logs/Networking/`date -d yesterday +\%Y-\%m-\%d`-sys*.log
+0 3 * * *      /local/bin/logmerge -f /mnt/logs/Windows/`date -d yesterday +\%Y-\%m-\%d`-sys*.log | sed 's/\t//g' | gzip -9 -c > /mnt/logs/Windows/`date -d yesterday +\%Y-\%m-\%d`.log.gz && rm -f /mnt/logs/Windows/`date -d yesterday +\%Y-\%m-\%d`-sys*.log
+
+# Using Curator to delete older indexes on the ElasticSearch cluster.
+0 1 * * *       curator --host gis-es1.unx.sas.com delete --prefix unix- --older-than 11
+5 1 * * *       curator --host gis-es1.unx.sas.com delete --prefix windows- --older-than 11
+10 1 * * *      curator --host gis-es1.unx.sas.com delete --prefix networking- --older-than 11
+
+# Another way to clean up old indexes
+# I have had some issues with this method due to the size of the indexes and it times out. Therefore I actually ran multiple ones a note before using Curator.
+0 1 * * *       curl -XDELETE "http://localhost:9200/*-`date --date='13 days ago' +\%Y.\%m.\%d`"
