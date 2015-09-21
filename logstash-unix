@@ -1,0 +1,37 @@
+# Below is a very general UNIX parser that can also work for most Windows/Network logs as well.
+# I copied this one from another github repo that I cannot remember a few years ago and it does a 
+# good job of doing the most basic parsing, which is what I needed at the time.
+
+input {
+
+file {
+    type => "unix-syslog"
+    exclude => ["*.gz"]
+    start_position => "end"
+    path => [ "/mnt/logs/UNIX/*.log"]
+    sincedb_path => "/root/.sincedb-unix"
+  }
+}
+
+filter {
+    grok {
+      overwrite => [ "message", "host" ]
+      match => {
+        "message" => "^(?:<%{POSINT:syslog_pri}>)?%{SYSLOGTIMESTAMP:timestamp} %{IPORHOST:host} (?:%{PROG:program}(?:\[%{POSINT:pid}\])?:? )?%{GREEDYDATA:message}"
+      }
+    }
+    syslog_pri { }
+    mutate {
+      remove_field => [ "syslog_facility", "syslog_facility_code", "syslog_severity", "syslog_severity_code" ]
+    }
+}
+
+output {
+    elasticsearch {
+    embedded => "false"
+    protocol => "node"
+    host => "es-server1.com,es-server2.com,es-server1.com"
+    cluster => "prod-elasticsearch"
+    index => "unix-%{+YYYY.MM.dd}"
+ }
+}
