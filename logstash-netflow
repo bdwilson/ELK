@@ -1,0 +1,34 @@
+# Below is a small Logstash indexer for Netflow data. Additional information on this can 
+# be round here -http://blogs.cisco.com/security/step-by-step-setup-of-elk-for-netflow-analytics
+# This allows Logstash to listen on port 9996 and then I have 1 if statement to help funnel certain
+# flows to one location and everything else to another.
+
+input {
+    udp {
+      port => 9996
+      codec => netflow {
+        definitions => "/etc/logstash/logstash-1.4.2/lib/logstash/codecs/netflow/netflow.yaml"
+      }
+    }
+  }
+
+  output {
+    stdout { codec => rubydebug }
+    if ( [host] =~ "10\..*" or [host] =~ "192\.168\..*") {
+      elasticsearch {
+        embedded => "false"
+        protocol => "node"
+        host => "es-server1.com,es-server2.com,es-server1.com"
+        cluster => "prod-elasticsearch"
+        index => "netflow-internal-%{+YYYY.MM.dd}"
+      }
+    } else {
+      elasticsearch {
+        embedded => "false"
+        protocol => "node"
+        host=> "192.168.1.40"
+        cluster => "test-elasticsearch"
+        index => "netflow-external-%{+YYYY.MM.dd}"
+      }
+    }
+  }

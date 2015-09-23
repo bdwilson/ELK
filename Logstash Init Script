@@ -1,0 +1,85 @@
+#!/bin/sh
+#
+# chkconfig: 2345 70 40
+# description: logstash startup script
+
+LOGBASE="/etc/logstash"
+LOGHOME="${LOGBASE}/logstash-1.4.2"
+TAG="unix"
+CONF="${LOGBASE}/${TAG}-indexer.conf"
+LOGFILE="/var/log/logstash-${TAG}.log"
+
+function missing_jar() {
+    echo "Failed to find logstash jar file: [$LOGSTASH]";
+    echo "Check /etc/init.d/logstash file for correct settings."
+    RETVAL=1;
+    exit 1;
+}
+
+function missing_conf() {
+    echo "Failed to find logstash config file:[$CONF]";
+    echo "Check /etc/init.d/logstash file for correct settings."
+    RETVAL=1;
+    exit 1;
+}
+
+#test -f $LOGSTASH || missing_jar
+test -f $CONF || missing_conf
+
+. /etc/rc.d/init.d/functions
+
+RETVAL=0
+
+case "$1" in
+    start)
+        echo -n "Starting logstash-${TAG}: "
+
+        #check to see if we're already running
+        pgrep -f ${CONF} > /dev/null
+        RUNNING=$?
+        if [ $RUNNING -eq 0 ]; then
+            echo "[FAILED]"
+            echo
+            echo "Reason: logstash-${TAG} is already running."
+            RETVAL=1
+            exit 1;
+        fi
+
+        #start it up
+        daemon "${LOGHOME}/bin/logstash agent -f $CONF -l ${LOGFILE} &"
+        pgrep -f ${CONF} > /var/run/logstash-${TAG}.pid #record PID in pid file
+        RETVAL=$?
+        echo
+        if [ $RETVAL -eq 0 ]; then
+            touch /var/lock/subsys/logstash-${TAG}
+        else
+            echo "RETVAL for daemon = $RETVAL"
+            echo "PID missing for logstash-${TAG}, PID value not recorded. Something is wrong!"
+            pgrep ${CONF}
+        fi
+        ;;
+
+    stop)
+        echo -n "Shutting down logstash-${TAG}: "
+        killproc -p /var/run/logstash-${TAG}.pid
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/logstash-${TAG}
+        ;;
+
+    restart|reload)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+
+    status)
+        status logstash-${TAG}
+        RETVAL=$?
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+esac
+
+exit $RETVAL

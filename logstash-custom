@@ -1,0 +1,40 @@
+# Below is a custom parser I made for a video program. This example shows how you can match on different 
+# expressions and use a lot of different predefined fields such as HOST, DATESTAMP, etc.
+
+file {
+    type => "video-syslog"
+    exclude => ["*.gz"]
+    start_position => "end"
+    path => [ "/home/server_upload/accesslog*"]
+    sincedb_path => "/root/.sincedb-video"
+  }
+}
+
+filter {
+    grok {
+      break_on_match => false
+      patterns_dir => "/etc/logstash/logstash-1.4.2/patterns"
+      overwrite => [ "message", "host" ]
+      match => [
+        "message", "%{DATESTAMP:timestamp} %{PROG:program} %{WORD:status} %{NUMBER:priority:float} %{GREEDYDATA:creation} %{INT:bytes} %{INT:hitcount} %{GREEDYDATA:url} /disk%{GREEDYDATA:location}",
+        "message", "%{HOST:host} %{DATA:url}_b%{INT:bitrate}_%{INT:frame}\.ts %{INT:bytes_sent} %{INT:obj_size} %{INT:bytes_recvd} %{WORD:method} %{INT:status} \[%{DATA:time_recvd}\+0000\] %{INT:time_to_serve}",
+        "message", "%{HOST:host} %{GREEDYDATA:url} %{INT:bytes_sent} %{INT:obj_size} %{INT:bytes_recvd} %{WORD:method} %{INT:status} \[%{DATA:time_recvd}\+0000\] %{INT:time_to_serve}"
+      ]
+      add_tag => [ "video" ]
+      tag_on_failure => [ "grokfail" ]
+     }
+  #Set the Event Timesteamp from the time-recvd field
+  date {
+    match => [ "time_recvd", "dd/MMM/YYYY:HH:mm:ss" ]
+    target => "@timestamp"
+  }
+}
+
+output {
+    elasticsearch {
+    embedded => "false"
+    protocol => "node"
+    host => "es-server1.com,es-server2.com,es-server1.com"
+    cluster => "prod-elasticsearch"
+    index => "video-%{+YYYY.MM.dd}"
+ }
