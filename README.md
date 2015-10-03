@@ -41,3 +41,7 @@ Various sites for ElasticSearch performance tuning
 https://blog.codecentric.de/en/2014/05/elasticsearch-indexing-performance-cheatsheet/
 https://www.elastic.co/blog/performance-considerations-elasticsearch-indexing
 https://www.loggly.com/blog/nine-tips-configuring-elasticsearch-for-high-performance/
+
+Comparison between Logstash, Splunk and Sumo
+---
+http://blog.takipi.com/log-management-tools-face-off-splunk-vs-logstash-vs-sumo-logic/
