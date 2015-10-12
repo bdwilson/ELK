@@ -3,6 +3,9 @@ ELK: It's Big Log Season - Infosecon 2015
 
 On this repo are some various configuration files, references, and scripts Brian and I have used to help setup and maintain our ELK instances. These may not necessarily be the best way to do things, but it does get the job done.
 
+Link to the presentation
+---
+http://www.slideshare.net/EricLuellen/elk-its-big-log-season
 
 Setting up ELK for Netflow data
 ---
